@@ -35,6 +35,9 @@ export const STYLES = {
 const QUALITY_SUFFIX =
   "full body character portrait, standing pose, detailed beautiful face, looking at viewer, plain background";
 
+// 公网环境下真实生成接口需要平台鉴权，失败时回退到预置样本（页面会标注为演示）
+const FALLBACK_IMAGES = ["/img/swordman.webp", "/img/entrance.webp", "/img/swordman-partial.webp"];
+
 /** 构造文生图直链（可直接作为 <img src>，无需 fetch，规避跨域限制） */
 export function buildImageUrl(prompt, style = "realistic") {
   const styleEn = STYLES[style]?.en ?? STYLES.realistic.en;
@@ -92,6 +95,7 @@ export function buildCharacter({ prompt, style = "realistic" }) {
     styleLabel,
     prompt,
     imageUrl: buildImageUrl(prompt, style),
+    fallbackUrl: pick(FALLBACK_IMAGES, seed),
     profile: {
       traits,
       background: `基于「${prompt}」生成的${styleLabel}风格角色。可用于短剧分镜、角色立绘与跨场景一致性创作。`,

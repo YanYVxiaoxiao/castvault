@@ -32,6 +32,7 @@ export default function Generate() {
   const [errorMsg, setErrorMsg] = useState("");
   const [saved, setSaved] = useState(false);
   const [recent, setRecent] = useState([]);
+  const [isFallback, setIsFallback] = useState(false);
 
   useEffect(() => {
     setRecent(getCustomCharacters());
@@ -41,6 +42,7 @@ export default function Generate() {
     if (!prompt.trim() || status === "loading") return;
     setSaved(false);
     setErrorMsg("");
+    setIsFallback(false);
     // 档案/声线本地立即生成；立绘通过 <img onLoad> 感知真实出图
     setResult(buildCharacter({ prompt: prompt.trim(), style }));
     setStatus("loading");
@@ -48,13 +50,18 @@ export default function Generate() {
 
   const handleImageLoaded = () => setStatus("done");
   const handleImageError = () => {
+    if (result?.fallbackUrl && !isFallback) {
+      setIsFallback(true);
+      setStatus("done");
+      return;
+    }
     setStatus("error");
     setErrorMsg("图像服务暂时不可用");
   };
 
   const handleSave = () => {
     if (!result) return;
-    saveCharacter(result);
+    saveCharacter(isFallback ? { ...result, imageUrl: result.fallbackUrl } : result);
     setSaved(true);
     setRecent(getCustomCharacters());
   };
@@ -231,7 +238,7 @@ export default function Generate() {
               {result && (
                 <>
                   <img
-                    src={result.imageUrl}
+                    src={isFallback ? result.fallbackUrl : result.imageUrl}
                     alt={result.name}
                     onLoad={handleImageLoaded}
                     onError={handleImageError}
@@ -246,6 +253,9 @@ export default function Generate() {
                 </>
               )}
             </div>
+            {isFallback && (
+              <p className="mt-2 text-[10px] text-gray-400">演示样本 · 真实生成需平台鉴权</p>
+            )}
 
             {/* 人设档案 */}
             <div className="glass-card relative aspect-[3/4] rounded-2xl p-5">
